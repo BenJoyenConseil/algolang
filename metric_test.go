@@ -1,7 +1,6 @@
 package rf
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -17,15 +16,12 @@ func TestAccuracy(t *testing.T) {
 
 	// Then
 	if r != 50 {
-		s := fmt.Sprintf("Accuracy %v != 50", r)
-		t.Error(s)
+		t.Error("Should be Accuracy 50 !=", r)
 	}
 	if r2 != 100 {
-		s := fmt.Sprintf("Accuracy %v != 100", r2)
-		t.Error(s)
+		t.Error("Should be Accuracy 100 !=", r2)
 	}
 	if r3 != 0 {
-		s := fmt.Sprintf("Accuracy %v != 0", r3)
-		t.Error(s)
+		t.Error("Should be Accuracy 0 !=", r3)
 	}
 }
