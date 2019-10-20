@@ -4,12 +4,19 @@ import (
 	"fmt"
 )
 
+/*
+Dataset is float64 matrix
+*/
 type Dataset [][]float64
 
+/*
+Tree represents a decision Tree structure with Predict method
+*/
 type Tree struct {
-	Left  *Tree
-	Value float64
-	Right *Tree
+	Left      *Tree
+	idFeature int
+	Value     float64
+	Right     *Tree
 }
 
 func giniIndex(left, right Dataset, classes []float64) (gini float64) {
@@ -50,16 +57,66 @@ func split(dataset Dataset, idFeature int, threshold float64) (left, right Datas
 	return
 }
 
+/*
+Fit builds and return a Tree fitted on data, and ready to predict new rows of []float64
+*/
+func Fit(dataset Dataset, maxDepth, minSize int, depth ...int) (tree *Tree) {
+
+	tree = new(Tree)
+	var left, right Dataset
+	var score float64
+	tree.idFeature, tree.Value, score, left, right = bestSplit(dataset)
+
+	var d int = 1
+	if len(depth) > 0 {
+		d = depth[0]
+	}
+	if left == nil || right == nil {
+		tree.Left = &Tree{Value: term(append(left, right...))}
+		tree.Right = &Tree{Value: term(append(left, right...))}
+		return
+	}
+
+	if d >= maxDepth {
+		tree.Left = &Tree{Value: term(left)}
+		tree.Right = &Tree{Value: term(right)}
+		return
+	}
+	if len(left) > minSize && score > 0 {
+		tree.Left = Fit(left, maxDepth, minSize, d+1)
+	} else {
+		tree.Left = &Tree{Value: term(left)}
+	}
+
+	if len(right) > minSize && score > 0 {
+		tree.Right = Fit(right, maxDepth, minSize, d+1)
+	} else {
+		tree.Right = &Tree{Value: term(right)}
+	}
+
+	return
+}
+
+/*
+Predict on a fitted Tree returns the corresponding class for new unseen row
+*/
+func (tree *Tree) Predict(row []float64) float64 {
+	if row[tree.idFeature] < tree.Value {
+		if tree.Left != nil {
+			return tree.Left.Predict(row)
+		}
+		return tree.Value
+	} else {
+		if tree.Right != nil {
+			return tree.Right.Predict(row)
+		}
+		return tree.Value
+	}
+}
+
 func bestSplit(dataset Dataset) (idFeature int, threshold float64, score float64, left, right Dataset) {
 	idFeature, threshold, score = 999, 999.0, 999.0
-	classesMap := map[float64]int{}
-	for _, row := range dataset {
-		classesMap[row[len(row)-1]] = 1
-	}
-	classes := []float64{}
-	for k := range classesMap {
-		classes = append(classes, k)
-	}
+	classes := uniqueClass(dataset)
 
 	for idCol := 0; idCol < len(dataset[0])-1; idCol++ {
 		for _, row := range dataset {
@@ -77,17 +134,24 @@ func bestSplit(dataset Dataset) (idFeature int, threshold float64, score float64
 	return
 }
 
-func unique(tab []float64) []float64 {
-	m := map[float64]bool{}
-	for _, c := range tab {
-		m[c] = true
+func term(dataset Dataset) float64 {
+	y := []float64{}
+	for _, row := range dataset {
+		y = append(y, row[len(row)-1])
 	}
-	uniqueVal := []float64{}
-	for k := range m {
-		uniqueVal = append(uniqueVal, k)
-	}
+	return vote(y)
+}
 
-	return uniqueVal
+func uniqueClass(dataset Dataset) []float64 {
+	m := map[float64]bool{}
+	for _, row := range dataset {
+		m[row[len(row)-1]] = true
+	}
+	classes := []float64{}
+	for k := range m {
+		classes = append(classes, k)
+	}
+	return classes
 }
 
 func vote(predictions []float64) float64 {
@@ -98,12 +162,10 @@ func vote(predictions []float64) float64 {
 		} else {
 			mapPred[p] = 1
 		}
-		fmt.Println(mapPred[p])
 	}
 	maxV := mapPred[predictions[0]]
 	maxIndex := predictions[0]
 	for k, v := range mapPred {
-		fmt.Println(v)
 		if v > maxV {
 			maxV = v
 			maxIndex = k
