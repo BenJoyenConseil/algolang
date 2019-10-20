@@ -1,7 +1,12 @@
 package rf
 
 import (
+	"bufio"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
 	"testing"
 )
 
@@ -188,25 +193,6 @@ func TestFit(t *testing.T) {
 	}
 }
 
-func printTree(t *Tree, d ...int) string {
-	s := "\n"
-	depth := 1
-	if len(d) < 0 {
-		depth = d[0]
-	}
-	for d := 0; d < depth; d++ {
-		s += fmt.Sprintf("a")
-	}
-	s += fmt.Sprintf("X%v = %v", t.idFeature, t.Value)
-	if t.Left != nil {
-		s += printTree(t.Left, depth+1)
-	}
-	if t.Right != nil {
-		s += printTree(t.Right, depth+1)
-	}
-	return s
-}
-
 func TestPredict(t *testing.T) {
 	// Given
 	tree := &Tree{
@@ -230,4 +216,69 @@ func TestPredict(t *testing.T) {
 	if r2 != row2[2] {
 		t.Error(r2, row2[2])
 	}
+}
+
+func TestFunctional(t *testing.T) {
+
+	dataset := loadCsv("./data_banknote_authentication.txt")
+	splitTrainSize := int(len(dataset) / 3)
+
+	model := Fit(dataset[:], 5, 10)
+	t.Log(printTree(model))
+
+	y, preds := []float64{}, []float64{}
+	for _, row := range dataset[splitTrainSize:] {
+		pred := model.Predict(row[:len(row)-1])
+		row = append(row, pred)
+		y = append(y, row[len(row)-2])
+		preds = append(preds, row[len(row)-1])
+	}
+	a := Accuracy(y, preds)
+
+	t.Log(a)
+	if a < 97 {
+		t.Error(a)
+	}
+}
+
+func loadCsv(filename string) Dataset {
+	dataset := Dataset{}
+	csvFile, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+	for {
+		row := []float64{}
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		for _, field := range record {
+			if value, err := strconv.ParseFloat(field, 64); err == nil {
+				row = append(row, value)
+			}
+		}
+		dataset = append(dataset, row)
+	}
+	return dataset
+}
+
+func printTree(t *Tree, d ...int) string {
+	s := "\n"
+	depth := 0
+	if len(d) < 0 {
+		depth = d[0]
+	}
+	for i := 0; i < depth; i++ {
+		s += fmt.Sprintf("Node #%v", i)
+	}
+	s += fmt.Sprintf("X%v = %v", t.idFeature, t.Value)
+	if t.Left != nil {
+		s += printTree(t.Left, depth+1)
+	}
+	if t.Right != nil {
+		s += printTree(t.Right, depth+1)
+	}
+	return s
 }
