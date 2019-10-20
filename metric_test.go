@@ -6,8 +6,8 @@ import (
 
 func TestAccuracy(t *testing.T) {
 	// Given
-	actual := []int{1, 0}
-	predicted := []int{ /* first test */ 1, 1 /* second test */, 1, 0 /* third test */, 0, 1}
+	actual := []float64{1, 0}
+	predicted := []float64{ /* first test */ 1, 1 /* second test */, 1, 0 /* third test */, 0, 1}
 
 	// When
 	r := Accuracy(actual, predicted[:2])

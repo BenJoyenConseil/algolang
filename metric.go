@@ -1,14 +1,13 @@
 package rf
 
-func Accuracy(actual, predicted []int) float32{
+func Accuracy(actual, predicted []float64) float64 {
 	var correct int = 0
 
 	for i := 0; i < len(actual); i++ {
 
 		if predicted[i] == actual[i] {
-			correct ++
+			correct++
 		}
 	}
-	return float32(correct) / float32(len(actual)) * 100.0
+	return float64(correct) / float64(len(actual)) * 100.0
 }
-
