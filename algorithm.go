@@ -1,9 +1,11 @@
 package rf
 
+type Serie []float64
+
 /*
 Dataset is float64 matrix
 */
-type Dataset [][]float64
+type Dataset []Serie
 
 /*
 Tree represents a decision Tree structure with Predict method
