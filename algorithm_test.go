@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVote(t *testing.T) {
@@ -22,15 +24,9 @@ func TestVote(t *testing.T) {
 	r3 := vote(predictions3)
 
 	// Then
-	if r != 0.3 {
-		t.Error(r)
-	}
-	if r2 != 0.9 {
-		t.Error(r2)
-	}
-	if r3 != 0.1 {
-		t.Error(r3)
-	}
+	assert.Equal(t, 0.3, r)
+	assert.Equal(t, 0.9, r2)
+	assert.Equal(t, 0.1, r3)
 }
 
 func TestGiniIndex(t *testing.T) {
@@ -49,9 +45,7 @@ func TestGiniIndex(t *testing.T) {
 	r := giniIndex(group1, group2, classes)
 
 	// Then
-	if r != 0.5 {
-		t.Error(r)
-	}
+	assert.Equal(t, 0.5, r)
 
 	// Given
 	group1 = Dataset{
@@ -73,10 +67,7 @@ func TestGiniIndex(t *testing.T) {
 	r = giniIndex(group1, group2, classes)
 
 	// Then
-	if r != 0.4444444444444444 {
-		t.Error(r)
-	}
-
+	assert.Equal(t, 0.4444444444444444, r)
 }
 
 func TestSplit(t *testing.T) {
@@ -93,12 +84,8 @@ func TestSplit(t *testing.T) {
 	left, right := split(dataset, 2, 0.4)
 
 	// Then
-	if len(left) != 3 {
-		t.Error(len(left))
-	}
-	if len(right) != 2 {
-		t.Error(len(right))
-	}
+	assert.Len(t, left, 3)
+	assert.Len(t, right, 2)
 }
 
 func TestBestSplit(t *testing.T) {
@@ -120,18 +107,10 @@ func TestBestSplit(t *testing.T) {
 	idFeature, threshold, score, _, right := bestSplit(dataset)
 
 	// Then
-	if idFeature != 0 {
-		t.Error("Wrong idFeature", idFeature)
-	}
-	if threshold != 6.642287351 {
-		t.Error("Wrong threshold", threshold)
-	}
-	if score != 0.0 {
-		t.Error("Wrong score", score)
-	}
-	if right[0][0] != 7.497545867 {
-		t.Error("Wrong groups", right)
-	}
+	assert.Equal(t, 0, idFeature)
+	assert.Equal(t, 6.642287351, threshold)
+	assert.Equal(t, 0.0, score)
+	assert.Equal(t, 7.497545867, right[0][0])
 }
 
 func TestUniqueClass(t *testing.T) {
@@ -143,9 +122,7 @@ func TestUniqueClass(t *testing.T) {
 	r := uniqueClass(tab)
 
 	// Then
-	if len(r) != 4 {
-		t.Error("Wrong ! ", r, len(r), "!= 4")
-	}
+	assert.ElementsMatch(t, []float64{1.0, 0.0, 2.1, 2.2}, r)
 }
 
 func TestTerm(t *testing.T) {
@@ -156,9 +133,7 @@ func TestTerm(t *testing.T) {
 	r := term(data)
 
 	// Then
-	if r != 1.0 {
-		t.Error("Wrong terminal value", r)
-	}
+	assert.Equal(t, 1.0, r)
 }
 
 func TestFit(t *testing.T) {
@@ -179,18 +154,11 @@ func TestFit(t *testing.T) {
 	// When
 	r := Fit(data, 10, 1)
 
-	if r.Left.Value != 0 {
-		t.Error(r.Left.Value, 0)
-	}
-	if r.Right.Value != 1 {
-		t.Error(r.Right.Value, 1)
-	}
-	if r.idFeature != 0 {
-		t.Error(r.idFeature, 0)
-	}
-	if r.Value != 6.642287351 {
-		t.Error(r.Value, 6.642287351)
-	}
+	// Then
+	assert.Equal(t, 0.0, r.Left.Value)
+	assert.Equal(t, 1.0, r.Right.Value)
+	assert.Equal(t, 0, r.idFeature)
+	assert.Equal(t, 6.642287351, r.Value)
 }
 
 func TestPredict(t *testing.T) {
@@ -209,13 +177,8 @@ func TestPredict(t *testing.T) {
 	r2 := tree.Predict(row2[:1])
 
 	// Then
-	if r != row[2] {
-		t.Error(r, row[2])
-	}
-	// Then
-	if r2 != row2[2] {
-		t.Error(r2, row2[2])
-	}
+	assert.Equal(t, 0.0, r)
+	assert.Equal(t, 1.0, r2)
 }
 
 func TestFunctional(t *testing.T) {
@@ -235,10 +198,7 @@ func TestFunctional(t *testing.T) {
 	}
 	a := Accuracy(y, preds)
 
-	t.Log(a)
-	if a < 97 {
-		t.Error(a)
-	}
+	assert.Greater(t, a, 97.0)
 }
 
 func loadCsv(filename string) Dataset {
