@@ -1,17 +1,18 @@
 package rf
 
-type Serie []float64
+import "fmt"
 
-/*
-Dataset is float64 matrix
-*/
-type Dataset []Serie
+// Model must be fitted, and it has a Predict method
+type Model interface {
+	Predict(Dataset) Serie
+}
 
 /*
 Tree represents a decision Tree structure with Predict method
 */
 type Tree struct {
 	Left      *Tree
+	Feature   string
 	idFeature int
 	Value     float64
 	Right     *Tree
@@ -20,20 +21,20 @@ type Tree struct {
 /*
 Fit builds and return a Tree fitted on data, and ready to predict new rows of []float64
 */
-func Fit(dataset Dataset, maxDepth, minSize int, depth ...int) (tree *Tree) {
+func Fit(df DataFrame, maxDepth, minSize int, depth ...int) (tree *Tree) {
 
 	tree = new(Tree)
-	var left, right Dataset
+	var left, right DataFrame
 	var score float64
-	tree.idFeature, tree.Value, score, left, right = bestSplit(dataset)
+	tree.idFeature, tree.Feature, tree.Value, score, left, right = bestSplit(df)
 
 	var d int = 1
 	if len(depth) > 0 {
 		d = depth[0]
 	}
 	if left == nil || right == nil {
-		tree.Left = &Tree{Value: term(append(left, right...))}
-		tree.Right = &Tree{Value: term(append(left, right...))}
+		tree.Left = &Tree{Value: term(Concat(left, right))}
+		tree.Right = &Tree{Value: term(Concat(left, right))}
 		return
 	}
 
@@ -58,27 +59,38 @@ func Fit(dataset Dataset, maxDepth, minSize int, depth ...int) (tree *Tree) {
 }
 
 /*
-Predict on a fitted Tree returns the corresponding class for new unseen row
+Predict on a fitted Tree returns the corresponding class foreach row
 */
-func (tree *Tree) Predict(row []float64) float64 {
+func (tree Tree) Predict(data Dataset) Serie {
+	preds := Serie{}
+	for _, r := range data {
+		preds = append(preds, tree.PredictRow(r))
+	}
+	return preds
+}
+
+/*
+PredictRow on a fitted Tree returns the corresponding class for a new unseen row
+*/
+func (tree Tree) PredictRow(row []float64) float64 {
 	if row[tree.idFeature] < tree.Value {
 		if tree.Left != nil {
-			return tree.Left.Predict(row)
+			return tree.Left.PredictRow(row)
 		}
 		return tree.Value
 	} else {
 		if tree.Right != nil {
-			return tree.Right.Predict(row)
+			return tree.Right.PredictRow(row)
 		}
 		return tree.Value
 	}
 }
 
-func giniIndex(left, right Dataset, classes []float64) (gini float64) {
-	nSamples := len(left) + len(right)
+func giniIndex(left, right DataFrame, classes []float64) (gini float64) {
+	nSamples := left.Size() + right.Size()
 
 	gini = 0.0
-	rowGroups := []Dataset{left, right}
+	rowGroups := []Serie{left["y"], right["y"]}
 	for _, rows := range rowGroups {
 		gSize := float64(len(rows))
 		if gSize == 0.0 {
@@ -87,8 +99,8 @@ func giniIndex(left, right Dataset, classes []float64) (gini float64) {
 		score := 0.0
 		for _, c := range classes {
 			classHit := 0.0
-			for _, r := range rows {
-				if y := r[len(r)-1]; y == c {
+			for _, val := range rows {
+				if y := val; y == c {
 					classHit++
 				}
 			}
@@ -100,49 +112,54 @@ func giniIndex(left, right Dataset, classes []float64) (gini float64) {
 	return
 }
 
-func split(dataset Dataset, idFeature int, threshold float64) (left, right Dataset) {
+func split(df DataFrame, feature string, threshold float64) (left, right DataFrame) {
 
-	for _, row := range dataset {
-		if row[idFeature] < threshold {
-			left = append(left, row)
+	left, right = NewDataFrame(), NewDataFrame()
+	for col := range df {
+		left[col], right[col] = Serie{}, Serie{}
+	}
+	for index, val := range df[feature] {
+		if val < threshold {
+			left = left.AddRow(df.ILoc(index))
 		} else {
-			right = append(right, row)
+			right = right.AddRow(df.ILoc(index))
 		}
 	}
 	return
 }
 
-func bestSplit(dataset Dataset) (idFeature int, threshold float64, score float64, left, right Dataset) {
-	idFeature, threshold, score = 999, 999.0, 999.0
-	classes := uniqueClass(dataset)
+func bestSplit(df DataFrame) (idFeature int, feature string, threshold float64, score float64, left, right DataFrame) {
+	idFeature, feature, threshold, score = 999, "x999", 999.0, 999.0
+	classes := uniqueClass(df["y"])
 
-	for idCol := 0; idCol < len(dataset[0])-1; idCol++ {
-		for _, row := range dataset {
-			l, r := split(dataset, idCol, row[idCol])
+	iCol := 0
+	for colName, values := range df.Drop("y") {
+		for _, v := range values {
+			fmt.Println(df, colName, v)
+			l, r := split(df, colName, v)
 			gini := giniIndex(l, r, classes)
+			fmt.Println(l, r, gini)
+
 			if gini < score {
-				idFeature, threshold, score, left, right = idCol, row[idCol], gini, l, r
+				idFeature, feature, threshold, score, left, right = iCol, colName, v, gini, l, r
 			}
 			if score == 0.0 {
 				return
 			}
 		}
+		iCol++
 	}
 	return
 }
 
-func term(dataset Dataset) float64 {
-	y := []float64{}
-	for _, row := range dataset {
-		y = append(y, row[len(row)-1])
-	}
-	return vote(y)
+func term(df DataFrame) float64 {
+	return vote(df["y"])
 }
 
-func uniqueClass(dataset Dataset) []float64 {
+func uniqueClass(s Serie) []float64 {
 	m := map[float64]bool{}
-	for _, row := range dataset {
-		m[row[len(row)-1]] = true
+	for _, val := range s {
+		m[val] = true
 	}
 	classes := []float64{}
 	for k := range m {
