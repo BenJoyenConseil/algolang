@@ -2,8 +2,8 @@ package rf
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -40,28 +40,20 @@ func (d DataFrame) Drop(column string) DataFrame {
 }
 
 func (d DataFrame) Size() int {
-	for _, s := range d {
-		return len(s)
-	}
-	return 0
+	return len(d[d.SortKeys()[0]])
 }
 
 func (d DataFrame) AddRow(row []float64) DataFrame {
-	i := 0
-	for col, serie := range d {
-		fmt.Println(col)
-		d[col] = append(serie, row[i])
-		i++
+	for index, col := range d.SortKeys() {
+		d[col] = append(d[col], row[index])
 	}
 	return d
 }
 
 func (d DataFrame) ILoc(index int) (row []float64) {
-	row = make([]float64, len(d))
-	i := 0
-	for _, serie := range d {
-		row[i] = serie[index]
-		i++
+	row = []float64{}
+	for _, col := range d.SortKeys() {
+		row = append(row, d[col][index])
 	}
 	return row
 }
@@ -75,6 +67,15 @@ func Concat(left, right DataFrame) DataFrame {
 		df[col] = append(serie, right[col]...)
 	}
 	return df
+}
+
+func (d DataFrame) SortKeys() []string {
+	var keys []string
+	for k := range d {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func ReadCSV(r io.ReadSeeker) DataFrame {

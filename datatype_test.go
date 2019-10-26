@@ -119,3 +119,20 @@ func TestILoc(t *testing.T) {
 	assert.ElementsMatch(t, r, []float64{1.0, 3.0})
 	assert.ElementsMatch(t, r2, []float64{2.0, 4.0})
 }
+
+func TestSortKeys(t *testing.T) {
+	// Given
+	df := NewDataFrame()
+	df["x0"] = Serie{1.0, 2.0}
+	df["x1"] = Serie{3.0, 4.0}
+	df["x2"] = Serie{3.0, 4.0}
+
+	// When
+	i := 0
+	for _, col := range df.SortKeys() {
+		assert.Equal(t, fmt.Sprintf("x%v", i), col)
+		i++
+	}
+
+	// Then
+}

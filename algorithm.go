@@ -4,7 +4,7 @@ import "fmt"
 
 // Model must be fitted, and it has a Predict method
 type Model interface {
-	Predict(Dataset) Serie
+	Predict(DataFrame) Serie
 }
 
 /*
@@ -27,6 +27,7 @@ func Fit(df DataFrame, maxDepth, minSize int, depth ...int) (tree *Tree) {
 	var left, right DataFrame
 	var score float64
 	tree.idFeature, tree.Feature, tree.Value, score, left, right = bestSplit(df)
+	fmt.Println(tree.idFeature, tree.Feature, tree.Value, score, left.Size(), right.Size())
 
 	var d int = 1
 	if len(depth) > 0 {
@@ -43,13 +44,13 @@ func Fit(df DataFrame, maxDepth, minSize int, depth ...int) (tree *Tree) {
 		tree.Right = &Tree{Value: term(right)}
 		return
 	}
-	if len(left) > minSize && score > 0 {
+	if left.Size() > minSize && score > 0 {
 		tree.Left = Fit(left, maxDepth, minSize, d+1)
 	} else {
 		tree.Left = &Tree{Value: term(left)}
 	}
 
-	if len(right) > minSize && score > 0 {
+	if right.Size() > minSize && score > 0 {
 		tree.Right = Fit(right, maxDepth, minSize, d+1)
 	} else {
 		tree.Right = &Tree{Value: term(right)}
@@ -61,10 +62,11 @@ func Fit(df DataFrame, maxDepth, minSize int, depth ...int) (tree *Tree) {
 /*
 Predict on a fitted Tree returns the corresponding class foreach row
 */
-func (tree Tree) Predict(data Dataset) Serie {
+func (tree Tree) Predict(df DataFrame) Serie {
 	preds := Serie{}
-	for _, r := range data {
-		preds = append(preds, tree.PredictRow(r))
+	for i := 0; i < len(df[df.SortKeys()[0]]); i++ {
+		preds = append(preds, tree.PredictRow(df.ILoc(i)))
+
 	}
 	return preds
 }
@@ -88,7 +90,6 @@ func (tree Tree) PredictRow(row []float64) float64 {
 
 func giniIndex(left, right DataFrame, classes []float64) (gini float64) {
 	nSamples := left.Size() + right.Size()
-
 	gini = 0.0
 	rowGroups := []Serie{left["y"], right["y"]}
 	for _, rows := range rowGroups {
@@ -133,15 +134,13 @@ func bestSplit(df DataFrame) (idFeature int, feature string, threshold float64, 
 	classes := uniqueClass(df["y"])
 
 	iCol := 0
-	for colName, values := range df.Drop("y") {
-		for _, v := range values {
-			fmt.Println(df, colName, v)
-			l, r := split(df, colName, v)
+	for _, col := range df.Drop("y").SortKeys() {
+		for _, v := range df[col] {
+			l, r := split(df, col, v)
 			gini := giniIndex(l, r, classes)
-			fmt.Println(l, r, gini)
 
 			if gini < score {
-				idFeature, feature, threshold, score, left, right = iCol, colName, v, gini, l, r
+				idFeature, feature, threshold, score, left, right = iCol, col, v, gini, l, r
 			}
 			if score == 0.0 {
 				return

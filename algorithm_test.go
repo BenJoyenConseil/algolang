@@ -136,17 +136,18 @@ func TestPredict(t *testing.T) {
 	// Given
 	tree := &Tree{
 		idFeature: 0,
+		Feature:   "0",
 		Right:     &Tree{Value: 1.0},
 		Value:     6.642287351,
 		Left:      &Tree{Value: 0.0},
 	}
-	data := Dataset{
-		{2.771244718, 1.784783929, 0.0},
-		{9.00220326, 3.339047188, 1.0},
+	df := DataFrame{
+		"0": {2.771244718, 9.00220326},
+		"1": {1.784783929, 3.339047188},
 	}
 
 	// When
-	r := tree.Predict(data)
+	r := tree.Predict(df)
 
 	// Then
 	assert.Exactly(t, Serie{0.0, 1.0}, r)
@@ -156,15 +157,15 @@ func TestFunctional(t *testing.T) {
 
 	df := loadCsv("./data_banknote_authentication.txt")
 	//splitTrainSize := int(df.Size() / 3)
-	df["y"] = df["x4"]
-	df = df.Drop("x4")
+	df["y"] = df["4"]
+	df = df.Drop("4")
 
 	model := Fit(df, 5, 10)
 	t.Log(printTree(model))
+	preds := model.Predict(df.Drop("y"))
+	a := Accuracy(df["y"], preds)
 
-	//a := Accuracy(y, preds)
-
-	//assert.Greater(t, a, 97.0)
+	assert.Greater(t, a, 97.0)
 }
 
 func loadCsv(filename string) DataFrame {
@@ -185,7 +186,7 @@ func printTree(t *Tree, d ...int) string {
 	for i := 0; i < depth; i++ {
 		s += fmt.Sprintf("Node #%v", i)
 	}
-	s += fmt.Sprintf("X%v = %v", t.idFeature, t.Value)
+	s += fmt.Sprintf("%v = %v", t.Feature, t.Value)
 	if t.Left != nil {
 		s += printTree(t.Left, depth+1)
 	}
