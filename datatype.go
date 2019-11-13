@@ -51,9 +51,9 @@ func (d DataFrame) AddRow(row []float64) DataFrame {
 }
 
 func (d DataFrame) ILoc(index int) (row []float64) {
-	row = []float64{}
-	for _, col := range d.SortKeys() {
-		row = append(row, d[col][index])
+	row = make([]float64, len(d), len(d))
+	for i, col := range d.SortKeys() {
+		row[i] = d[col][index]
 	}
 	return row
 }
@@ -70,9 +70,11 @@ func Concat(left, right DataFrame) DataFrame {
 }
 
 func (d DataFrame) SortKeys() []string {
-	var keys []string
+	var keys []string = make([]string, len(d), len(d))
+	i := 0
 	for k := range d {
-		keys = append(keys, k)
+		keys[i] = k
+		i++
 	}
 	sort.Strings(keys)
 	return keys

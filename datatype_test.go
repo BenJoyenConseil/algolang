@@ -8,22 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDataFrame(t *testing.T) {
-	df := NewDataFrame()
-
-	df["X1"] = Serie{1.0, 0.2, 9.092}
-	df["X2"] = Serie{2.0, 2.2, 11.092}
-	df["y"] = Serie{1.0, 1.0, 0.0}
-	df["preds"] = Serie{1.0, 0.0, 1.0}
-	for _, row := range df["y"] {
-		fmt.Println(row)
-	}
-	for i, col := range df {
-		fmt.Println(i, col)
-	}
-	panic("")
-}
-
 func TestAdd(t *testing.T) {
 	// Given
 	df := NewDataFrame()
@@ -42,7 +26,7 @@ func TestDrop(t *testing.T) {
 	df["col_delete_me"] = Serie{}
 
 	// When
-	df.Drop("col_delete_me")
+	df = df.Drop("col_delete_me")
 
 	// Then
 	assert.Nil(t, df["col_delete_me"])
@@ -135,4 +119,20 @@ func TestSortKeys(t *testing.T) {
 	}
 
 	// Then
+}
+
+func TestDataFrame_APIusage(t *testing.T) {
+	df := NewDataFrame()
+
+	df["X1"] = Serie{1.0, 0.2, 9.092}
+	df["X2"] = Serie{2.0, 2.2, 11.092}
+	df["y"] = Serie{1.0, 1.0, 0.0}
+	df["preds"] = Serie{1.0, 0.0, 1.0}
+	for _, row := range df["y"] {
+		fmt.Println(row)
+	}
+	for i, col := range df {
+		fmt.Println(i, col)
+	}
+
 }
