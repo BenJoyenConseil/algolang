@@ -1,7 +1,5 @@
 package rf
 
-import "fmt"
-
 // Model must be fitted, and it has a Predict method
 type Model interface {
 	Predict(DataFrame) Serie
@@ -23,11 +21,14 @@ Fit builds and return a Tree fitted on data, and ready to predict new rows of []
 */
 func Fit(df DataFrame, maxDepth, minSize int, depth ...int) (tree *Tree) {
 
+	if _, ok := df["y"]; !ok {
+		panic("The df DataFrame needs at least a \"y\" column to fit")
+	}
+
 	tree = new(Tree)
 	var left, right DataFrame
 	var score float64
 	tree.idFeature, tree.Feature, tree.Value, score, left, right = bestSplit(df)
-	fmt.Println(tree.idFeature, tree.Feature, tree.Value, score, left.Size(), right.Size())
 
 	var d int = 1
 	if len(depth) > 0 {

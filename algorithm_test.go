@@ -91,6 +91,24 @@ func TestBestSplit(t *testing.T) {
 	assert.Equal(t, 7.497545867, right["x0"][0])
 }
 
+func BenchmarkBestSplit(b *testing.B) {
+	df := DataFrame{
+		"x0": {2.771244718, 1.728571309, 3.678319846, 3.961043357, 2.999208922, 7.497545867, 9.00220326, 7.444542326, 10.12493903, 6.642287351},
+		"x1": {1.784783929, 1.169761413, 2.81281357, 2.61995032, 2.209014212, 3.162953546, 3.339047188, 0.476683375, 3.234550982, 3.319983761},
+		"y":  {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	}
+
+	var idFeature int
+	var feature string
+	var threshold, score float64
+	var left, right DataFrame
+
+	for i := 0; i < b.N; i++ {
+		idFeature, feature, threshold, score, left, right = bestSplit(df)
+	}
+	fmt.Println(idFeature, feature, threshold, score, left, right)
+}
+
 func TestUniqueClass(t *testing.T) {
 	// Given
 	tab := Serie{1.0, 1.0, 0.0, 0.0, 2.1, 2.2, 0.0}
@@ -132,6 +150,20 @@ func TestFit(t *testing.T) {
 	assert.Equal(t, 6.642287351, r.Value)
 }
 
+func TestFit_Fail_yNotExist(t *testing.T) {
+	// Given
+	df := DataFrame{
+		"x0":   {2.771244718, 1.728571309, 3.678319846, 3.961043357, 2.999208922, 7.497545867, 9.00220326, 7.444542326, 10.12493903, 6.642287351},
+		"x1":   {1.784783929, 1.169761413, 2.81281357, 2.61995032, 2.209014212, 3.162953546, 3.339047188, 0.476683375, 3.234550982, 3.319983761},
+		"yeah": {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	}
+
+	// When
+	// Then
+	assert.PanicsWithValue(t, "The df DataFrame needs at least a \"y\" column to fit", func() { Fit(df, 10, 5) })
+
+}
+
 func TestPredict(t *testing.T) {
 	// Given
 	tree := &Tree{
@@ -166,6 +198,21 @@ func TestFunctional(t *testing.T) {
 	a := Accuracy(df["y"], preds)
 
 	assert.Greater(t, a, 97.0)
+}
+
+func BenchmarkReadCSV(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		loadCsv("./data_banknote_authentication.txt")
+	}
+}
+
+func BenchmarkFit(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		df := loadCsv("./data_banknote_authentication.txt")
+		df["y"] = df["4"]
+		df = df.Drop("4")
+		_ = Fit(df, 5, 10)
+	}
 }
 
 func loadCsv(filename string) DataFrame {
