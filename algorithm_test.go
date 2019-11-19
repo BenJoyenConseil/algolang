@@ -196,8 +196,10 @@ func TestFunctional(t *testing.T) {
 	t.Log(printTree(model))
 	preds := model.Predict(df.Drop("y"))
 	a := Accuracy(df["y"], preds)
+	fmt.Println(printTree(model))
 
 	assert.Greater(t, a, 97.0)
+	t.Fail()
 }
 
 func BenchmarkReadCSV(b *testing.B) {
@@ -227,7 +229,7 @@ func loadCsv(filename string) DataFrame {
 func printTree(t *Tree, d ...int) string {
 	s := "\n"
 	depth := 0
-	if len(d) < 0 {
+	if len(d) > 0 {
 		depth = d[0]
 	}
 	for i := 0; i < depth; i++ {
