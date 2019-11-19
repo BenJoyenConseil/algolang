@@ -1,6 +1,9 @@
 package rf
 
-func Accuracy(actual, predicted []float64) float64 {
+/*
+Accuracy counts the number of predictions equal to the actual class and returns it as percentage
+*/
+func Accuracy(actual, predicted Serie) float64 {
 	var correct int = 0
 
 	for i := 0; i < len(actual); i++ {
