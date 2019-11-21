@@ -8,13 +8,13 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func LoadCsv(filename string) qframe.QFrame {
+// LoadCsv loads a csv into a QFrame structure
+func LoadCsv(filename string, headers ...csv.ConfigFunc) qframe.QFrame {
 	csvFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
-	types := map[string]string{"y": "float"}
-	return qframe.ReadCSV(csvFile, csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
+	return qframe.ReadCSV(csvFile, headers...)
 }
 
 func ToMatrix(df qframe.QFrame) *mat.Dense {

@@ -1,8 +1,9 @@
-package rf
+package deprecated
 
 import (
 	"fmt"
 	"os"
+	"rf/eval"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -187,7 +188,7 @@ func TestPredict(t *testing.T) {
 
 func TestFunctional(t *testing.T) {
 
-	df := loadCsv("./data_banknote_authentication.txt")
+	df := loadCsv("../data/data_banknote_authentication.txt")
 	//splitTrainSize := int(df.Size() / 3)
 	df["y"] = df["4"]
 	df = df.Drop("4")
@@ -195,22 +196,21 @@ func TestFunctional(t *testing.T) {
 	model := Fit(df, 5, 10)
 	t.Log(printTree(model))
 	preds := model.Predict(df.Drop("y"))
-	a := Accuracy(df["y"], preds)
+	a := eval.Accuracy(df["y"], preds)
 	fmt.Println(printTree(model))
 
 	assert.Greater(t, a, 97.0)
-	t.Fail()
 }
 
 func BenchmarkReadCSV(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		loadCsv("./data_banknote_authentication.txt")
+		loadCsv("../data/data_banknote_authentication.txt")
 	}
 }
 
 func BenchmarkFit(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		df := loadCsv("./data_banknote_authentication.txt")
+		df := loadCsv("../data/data_banknote_authentication.txt")
 		df["y"] = df["4"]
 		df = df.Drop("4")
 		_ = Fit(df, 5, 10)

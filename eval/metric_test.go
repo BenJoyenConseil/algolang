@@ -1,4 +1,4 @@
-package rf
+package eval
 
 import (
 	"testing"

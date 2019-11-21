@@ -1,4 +1,4 @@
-package rf
+package deprecated
 
 // Model must be fitted, and it has a Predict method
 type Model interface {
