@@ -2,11 +2,8 @@ package tree
 
 import (
 	"fmt"
-	"os"
+	"rf/io"
 	"testing"
-
-	"github.com/tobgu/qframe"
-	"github.com/tobgu/qframe/config/csv"
 
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/mat"
@@ -210,26 +207,6 @@ func TestFit(t *testing.T) {
 	assert.Equal(t, 6.642287351, r.Value)
 }
 
-func TestYolo(t *testing.T) {
-	a := mat.NewDense(2, 2, []float64{
-		0.2, 0.2,
-		0.3, 0.3,
-	})
-	b := mat.NewDense(2, 2, []float64{
-		0.1, 0.1,
-		0.4, 0.4,
-	})
-	c := &mat.Dense{}
-	c.Stack(a, b)
-	fmt.Println(c)
-	fmt.Println(a)
-	fmt.Println(b)
-
-	Fit(a, -1, 10, 1)
-	assert.Fail(t, "lol")
-	t.Fail()
-}
-
 func TestPredict(t *testing.T) {
 	// Given
 	tree := &Tree{
@@ -252,8 +229,8 @@ func TestPredict(t *testing.T) {
 
 func TestFunctional(t *testing.T) {
 
-	df := loadCsv("../data_banknote_authentication.txt")
-	m := toMatrix(df)
+	df := io.LoadCsv("../data/data_banknote_authentication.txt")
+	m := io.ToMatrix(df)
 
 	model := Fit(m, -1, 5, 10)
 	preds := model.Predict(m)
@@ -263,36 +240,15 @@ func TestFunctional(t *testing.T) {
 	fmt.Println(a)
 
 	assert.Greater(t, a, 97.0)
-	t.Fail()
 }
 
 func BenchmarkFit(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
-		df := loadCsv("../data_banknote_authentication.txt")
-		m := toMatrix(df)
+		df := io.LoadCsv("../data_banknote_authentication.txt")
+		m := io.ToMatrix(df)
 		_ = Fit(m, -1, 5, 10)
 	}
-}
-
-func loadCsv(filename string) qframe.QFrame {
-	csvFile, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	types := map[string]string{"y": "float"}
-	return qframe.ReadCSV(csvFile, csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
-}
-
-func toMatrix(df qframe.QFrame) *mat.Dense {
-	data := []float64{}
-	for i := 0; i < df.Len(); i++ {
-		for _, c := range df.ColumnNames() {
-			v, _ := df.FloatView(c)
-			data = append(data, v.ItemAt(i))
-		}
-	}
-	return mat.NewDense(df.Len(), len(df.ColumnNames()), data)
 }
 
 func accuracy(actual, predicted []float64) float64 {

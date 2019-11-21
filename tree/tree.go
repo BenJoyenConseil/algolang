@@ -90,7 +90,7 @@ func Fit(m mat.Matrix, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
 func split(m mat.Matrix, col int, threshold float64) (left, right *mat.Dense) {
 
 	rowsCount, colCount := m.Dims()
-	leftRows, rirghtRows := make([]float64, 0, rowsCount), make([]float64, 0, rowsCount)
+	leftData, rirghtData := make([]float64, 0, rowsCount), make([]float64, 0, rowsCount)
 	leftLen, rightLen := 0, 0
 
 	for i := 0; i < rowsCount; i++ {
@@ -98,18 +98,18 @@ func split(m mat.Matrix, col int, threshold float64) (left, right *mat.Dense) {
 		row := mat.Row(nil, i, m)
 
 		if val < threshold {
-			leftRows = append(leftRows, row...)
+			leftData = append(leftData, row...)
 			leftLen++
 		} else {
-			rirghtRows = append(rirghtRows, row...)
+			rirghtData = append(rirghtData, row...)
 			rightLen++
 		}
 	}
-	if leftLen != 0 {
-		left = mat.NewDense(leftLen, colCount, leftRows)
+	if len(leftData) > 0 {
+		left = mat.NewDense(leftLen, colCount, leftData)
 	}
-	if rightLen != 0 {
-		right = mat.NewDense(rightLen, colCount, rirghtRows)
+	if len(rirghtData) > 0 {
+		right = mat.NewDense(rightLen, colCount, rirghtData)
 	}
 
 	return
