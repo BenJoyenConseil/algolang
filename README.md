@@ -3,15 +3,15 @@ Machine Learning algorithms :
 Decision Tree, Random Forest implementations
 
 
-## Usage
+## Algorithms & Usage
 "This section applies the CART algorithm to the Bank Note dataset."
 
-The ```algorithm``` module provides Fit constructor that returns a DecisionTree
+The ```tree``` module provides Fit constructor that returns a DecisionTree
 
 	model := Fit(df, 5, 10)
 	preds := model.Predict(df.Drop("y"))
 	
-The ```metric``` module includes tools to evaluate your model
+The ```eval``` module includes tools to evaluate your model
 
 	a := Accuracy(df["y"], preds)
 	fmt.Println(a)
