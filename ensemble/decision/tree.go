@@ -1,4 +1,4 @@
-package tree
+package decision
 
 import (
 	"fmt"
@@ -98,11 +98,11 @@ func printTree(t *Tree, d ...int) string {
 	depth := 0
 	if len(d) > 0 {
 		depth = d[0]
+		for i := 0; i < depth; i++ {
+			s += fmt.Sprint("\t")
+		}
 	}
-	for i := 0; i < depth; i++ {
-		s += fmt.Sprint("\t")
-	}
-	fmt.Print("[feature ", t.Feature, "; value ", t.Value, "] \n")
+	s += fmt.Sprint("[feature ", t.Feature, "; value ", t.Value, "] \n")
 	if t.Left != nil {
 		s += printTree(t.Left, depth+1)
 	}
