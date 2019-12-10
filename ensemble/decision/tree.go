@@ -49,7 +49,7 @@ func (tree Tree) PredictRow(row mat.Vector) float64 {
 /*
 Fit builds and return a Tree fitted on data, and ready to predict new rows of []float64
 */
-func Fit(m mat.Matrix, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
+func Fit(m *mat.Dense, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
 
 	col, threshold, score, l, r := bestSplit(m, yCol)
 	tree = &Tree{
@@ -61,11 +61,18 @@ func Fit(m mat.Matrix, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
 	if len(depth) > 0 {
 		d = depth[0]
 	}
+	if l == nil && r == nil {
+		v := term(m, yCol)
+		tree.Value = v
+		tree.Feature = 0
+		return
+	}
 	if l == nil || r == nil {
 		concat := &mat.Dense{}
 		concat.Stack(l, r)
-		tree.Left = &Tree{Value: term(concat, yCol)}
-		tree.Right = &Tree{Value: term(concat, yCol)}
+		v := term(concat, yCol)
+		tree.Left = &Tree{Value: v}
+		tree.Right = &Tree{Value: v}
 		return
 	}
 	if d >= maxDepth {
@@ -117,7 +124,6 @@ func split(m mat.Matrix, col int, threshold float64) (left, right *mat.Dense) {
 
 	rowsCount, colCount := m.Dims()
 	leftData, rirghtData := make([]float64, 0, rowsCount), make([]float64, 0, rowsCount)
-	leftLen, rightLen := 0, 0
 
 	for i := 0; i < rowsCount; i++ {
 		val := m.At(i, col)
@@ -125,17 +131,15 @@ func split(m mat.Matrix, col int, threshold float64) (left, right *mat.Dense) {
 
 		if val < threshold {
 			leftData = append(leftData, row...)
-			leftLen++
 		} else {
 			rirghtData = append(rirghtData, row...)
-			rightLen++
 		}
 	}
 	if len(leftData) > 0 {
-		left = mat.NewDense(leftLen, colCount, leftData)
+		left = mat.NewDense(len(leftData)/colCount, colCount, leftData)
 	}
 	if len(rirghtData) > 0 {
-		right = mat.NewDense(rightLen, colCount, rirghtData)
+		right = mat.NewDense(len(rirghtData)/colCount, colCount, rirghtData)
 	}
 
 	return
@@ -145,13 +149,13 @@ func split(m mat.Matrix, col int, threshold float64) (left, right *mat.Dense) {
 func bestSplit(m mat.Matrix, yCol int) (col int, threshold float64, score float64, left, right *mat.Dense) {
 	col, threshold, score = 999, 999.0, 999.0
 
-	rl, cl := m.Dims()
+	dR, dC := m.Dims()
 	if yCol == -1 {
-		yCol = cl - 1
+		yCol = dC - 1
 	}
 
-	for j := 0; j < cl-1; j++ {
-		for i := 0; i < rl; i++ {
+	for j := 0; j < dC-1; j++ {
+		for i := 0; i < dR; i++ {
 			l, r := split(m, j, m.At(i, j))
 			if l == nil || r == nil {
 				continue
@@ -214,5 +218,5 @@ func term(m *mat.Dense, yCol int) float64 {
 	if yCol == -1 {
 		yCol = cl - 1
 	}
-	return mathelper.MostCurrentValue(m.ColView(yCol))
+	return mathelper.Mode(m.ColView(yCol))
 }

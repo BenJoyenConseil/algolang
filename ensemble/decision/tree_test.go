@@ -87,6 +87,20 @@ func TestBestSplit_Ycol(t *testing.T) {
 	assert.Equal(t, 0.0, left.At(4, 1))
 	assert.Equal(t, 1.0, right.At(4, 1))
 }
+func TestBestSplit_NilNil(t *testing.T) {
+	// Given
+	m := mat.NewDense(2, 3, []float64{
+		0.21431, 0.87711, 1.0,
+		0.21431, 0.87711, 1.0,
+	})
+
+	// When
+	_, _, _, left, right := bestSplit(m, 1)
+
+	// Then
+	assert.NotNil(t, left)
+	assert.NotNil(t, right)
+}
 
 func TestGiniIndex(t *testing.T) {
 	// Given

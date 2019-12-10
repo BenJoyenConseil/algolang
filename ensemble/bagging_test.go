@@ -2,11 +2,15 @@ package ensemble
 
 import (
 	"fmt"
+	"math/rand"
 	"rf/ensemble/decision"
+	"rf/eval"
+	"rf/io"
 	"rf/mathelper"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tobgu/qframe/config/csv"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -62,12 +66,12 @@ func TestFit(t *testing.T) {
 	})
 	yCol := 3
 	nEstimators := 5
-	maxDepth := 3
+	maxDepth := 1
 	minSampleSplit := 1
-	seed := int64(123)
+	rand.Seed(1234)
 
 	// When
-	r := Fit(m, yCol, nEstimators, maxDepth, minSampleSplit, seed)
+	r := Fit(m, yCol, nEstimators, maxDepth, minSampleSplit)
 
 	// Then
 	assert.Len(t, r.estimators, 5)
@@ -84,23 +88,23 @@ func TestFit(t *testing.T) {
 	assert.Equal(t, 0, r.estimators[1].Feature)
 	assert.Contains(t, r.feMapping[r.estimators[1]], 0, 1)
 	// Tree 2
-	assert.Equal(t, 6.642287351, r.estimators[2].Value)
+	assert.Equal(t, 7.444542326, r.estimators[2].Value)
 	assert.Equal(t, 0.0, r.estimators[2].Left.Value)
 	assert.Equal(t, 1.0, r.estimators[2].Right.Value)
 	assert.Equal(t, 0, r.estimators[2].Feature)
 	assert.Contains(t, r.feMapping[r.estimators[2]], 0, 1)
 	// Tree 3
-	assert.Equal(t, 6.642287351, r.estimators[3].Value)
+	assert.Equal(t, 3.234550982, r.estimators[3].Value)
 	assert.Equal(t, 0.0, r.estimators[3].Left.Value)
 	assert.Equal(t, 1.0, r.estimators[3].Right.Value)
 	assert.Equal(t, 0, r.estimators[3].Feature)
-	assert.Contains(t, r.feMapping[r.estimators[3]], 0, 1)
+	assert.Contains(t, r.feMapping[r.estimators[3]], 1, 2)
 	// Tree 4
-	assert.Equal(t, 6.642287351, r.estimators[4].Value)
+	assert.Equal(t, 3.162953546, r.estimators[4].Value)
 	assert.Equal(t, 0.0, r.estimators[4].Left.Value)
 	assert.Equal(t, 1.0, r.estimators[4].Right.Value)
 	assert.Equal(t, 0, r.estimators[4].Feature)
-	assert.Contains(t, r.feMapping[r.estimators[4]], 0, 1)
+	assert.Contains(t, r.feMapping[r.estimators[4]], 1, 2)
 }
 
 func TestPredict(t *testing.T) {
@@ -123,8 +127,8 @@ func TestPredict(t *testing.T) {
 		Right:   &decision.Tree{Value: 0.0},
 	}
 	rf := &RandomForest{
-		feMapping: make(map[*decision.Tree][]int, 2),
-		estimators:      []*decision.Tree{dtree1, dtree2},
+		feMapping:  make(map[*decision.Tree][]int, 2),
+		estimators: []*decision.Tree{dtree1, dtree2},
 	}
 	rf.feMapping[dtree2] = []int{2, 3}
 	rf.feMapping[dtree1] = []int{3, 2}
@@ -155,8 +159,8 @@ func TestPredictRow(t *testing.T) {
 		Right:   &decision.Tree{Value: 0.0},
 	}
 	rf := &RandomForest{
-		feMapping: make(map[*decision.Tree][]int, 2),
-		estimators:      []*decision.Tree{dtree1, dtree2},
+		feMapping:  make(map[*decision.Tree][]int, 2),
+		estimators: []*decision.Tree{dtree1, dtree2},
 	}
 	rf.feMapping[dtree2] = []int{2, 3}
 	rf.feMapping[dtree1] = []int{3, 2}
@@ -173,16 +177,20 @@ func TestPredictRow(t *testing.T) {
 func TestRandomSubColumns(t *testing.T) {
 	// Givne
 	columns := []int{0, 1, 2, 3, 4, 5}
-	seed := int64(123)
+	rand.Seed(123)
 
 	// When
-	r := randomSubColumns(columns, 0.5, seed)
+	r := randomSubColumns(columns, 0.5)
 
 	// Then
 	fmt.Println(r)
 	assert.Len(t, r, 3)
-	assert.NotContains(t, r, 4, 5)
-	assert.Contains(t, r, 0, 1, 2, 3)
+	assert.NotContains(t, r, 1)
+	assert.NotContains(t, r, 2)
+	assert.NotContains(t, r, 5)
+	assert.Contains(t, r, 0, 0)
+	assert.Contains(t, r, 0, 3)
+	assert.Contains(t, r, 0, 4)
 }
 
 func TestIsFitted(t *testing.T) {
@@ -213,10 +221,10 @@ func TestSubSample(t *testing.T) {
 		10.12493903, 3.234550982, 1.0,
 		6.642287351, 3.319983761, 1.0,
 	})
-	seed := int64(123)
+	rand.Seed(123)
 
 	// When
-	r := subsample(m, 0.4, []int{1, 2}, seed)
+	r := subsample(m, 0.4, []int{1, 2})
 
 	// Then
 	lr, lc := r.Dims()
@@ -249,9 +257,9 @@ func TestRand(t *testing.T) {
 	ycol := 3
 	features := extractFeatures(m, ycol)
 	fmt.Println("features :", features)
-	rdmCols := randomSubColumns(features, ratioC, 123)
+	rdmCols := randomSubColumns(features, ratioC)
 	fmt.Println("rdmCols :", rdmCols)
-	sub := subsample(m, ratioR, append(rdmCols, ycol), 123)
+	sub := subsample(m, ratioR, append(rdmCols, ycol))
 	fmt.Print("sub matrix\n", mat.Formatted(sub), "\n")
 
 	tree := decision.Fit(sub, 2, 2, 1)
@@ -259,4 +267,34 @@ func TestRand(t *testing.T) {
 	fmt.Println(tree)
 
 	t.Fail()
+}
+
+func TestFunctional(t *testing.T) {
+
+	types := map[string]string{"y": "float"}
+	df := io.LoadCsv("../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
+	m := io.ToMatrix(df)
+
+	model := Fit(m, -1, 5, 5, 10)
+	preds := model.Predict(m)
+	y, _ := df.FloatView("y")
+	a := eval.Accuracy(y.Slice(), preds)
+
+	for _, e := range model.estimators {
+		fmt.Println(e)
+	}
+	fmt.Println("Accuracy", a)
+
+	assert.Greater(t, a, 90.0)
+	t.Fail()
+}
+
+func BenchmarkFit(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+		types := map[string]string{"y": "float"}
+		df := io.LoadCsv("../../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
+		m := io.ToMatrix(df)
+		_ = Fit(m, -1, 5, 5, 10)
+	}
 }

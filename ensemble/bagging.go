@@ -26,7 +26,11 @@ type RandomForest struct {
 /*
 Fit builds decision trees on subsamples of the matrix X using the sqare root of nFeatures
 */
-func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int, seed int64) *RandomForest {
+func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int) *RandomForest {
+	if yCol == -1 {
+		_, dC := m.Dims()
+		yCol = dC - 1
+	}
 	feCols := extractFeatures(m, yCol)
 	rf := &RandomForest{
 		feMapping: make(map[*decision.Tree][]int),
@@ -35,8 +39,8 @@ func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int, seed int64)
 	ratioC := 1 - sqrtRatio(len(feCols))
 
 	for estimator := 0; estimator < nEstimators; estimator++ {
-		subCols := randomSubColumns(feCols, ratioC, seed)
-		subM := subsample(m, ratioR, append(subCols, yCol), seed)
+		subCols := randomSubColumns(feCols, ratioC)
+		subM := subsample(m, ratioR, append(subCols, yCol))
 		t := decision.Fit(subM, -1, maxDepth, minSize)
 		rf.estimators = append(rf.estimators, t)
 		rf.feMapping[t] = subCols
@@ -88,14 +92,12 @@ func extractFeatures(m mat.Matrix, yCol int) []int {
 	return feCols
 }
 
-func subsample(m *mat.Dense, ratio float64, columns []int, seed int64) (samples mat.Matrix) {
+func subsample(m *mat.Dense, ratio float64, columns []int) (samples *mat.Dense) {
 	r, _ := m.Dims()
 	nRow := int(float64(r) * ratio)
 	sub := mat.NewDense(nRow, len(columns), nil)
-	s := rand.NewSource(seed)
-	random := rand.New(s)
 	for i := 0; i < nRow; i++ {
-		id := random.Intn(r)
+		id := rand.Intn(r)
 		row := m.RawRowView(id)
 		for j, cid := range columns {
 			sub.Set(i, j, row[cid])
@@ -104,18 +106,19 @@ func subsample(m *mat.Dense, ratio float64, columns []int, seed int64) (samples 
 	return sub
 }
 
-func randomSubColumns(columns []int, ratio float64, seed int64) []int {
-	s := rand.NewSource(seed)
-	random := rand.New(s)
+func randomSubColumns(columns []int, ratio float64) []int {
 	n := int(ratio * float64(len(columns)))
-	indexes := make(map[int]bool, n)
-	cols := make([]int, 0, n)
+	indexes := make(map[int]bool)
+	cols := make([]int, n)
 
 	for len(indexes) < n {
-		indexes[random.Intn(n)] = true
+		r := rand.Intn(len(columns) - 1)
+		indexes[r] = true
 	}
+	i := 0
 	for k := range indexes {
-		cols = append(cols, k)
+		cols[i] = k
+		i++
 	}
 	sort.Ints(cols)
 	return cols
