@@ -2,6 +2,7 @@ package decision
 
 import (
 	"fmt"
+	"rf/mathelper"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -208,27 +209,10 @@ func vCount(f func(float64) bool, v mat.Vector) int {
 	return n
 }
 
-func mostCurrentValue(v mat.Vector) float64 {
-	counter := make(map[float64]int)
-	l, _ := v.Dims()
-	for i := 0; i < l; i++ {
-		counter[v.AtVec(i)]++
-	}
-	max := counter[v.AtVec(0)]
-	maxOccurence := v.AtVec(0)
-	for k, v := range counter {
-		if v > max {
-			max = v
-			maxOccurence = k
-		}
-	}
-	return maxOccurence
-}
-
 func term(m *mat.Dense, yCol int) float64 {
 	_, cl := m.Dims()
 	if yCol == -1 {
 		yCol = cl - 1
 	}
-	return mostCurrentValue(m.ColView(yCol))
+	return mathelper.MostCurrentValue(m.ColView(yCol))
 }

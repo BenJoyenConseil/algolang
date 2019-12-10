@@ -3,6 +3,7 @@ package ensemble
 import (
 	"fmt"
 	"rf/ensemble/decision"
+	"rf/mathelper"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,27 +70,104 @@ func TestFit(t *testing.T) {
 	r := Fit(m, yCol, nEstimators, maxDepth, minSampleSplit, seed)
 
 	// Then
-	assert.Len(t, r.treeBag, 5)
+	assert.Len(t, r.estimators, 5)
 	// Tree 0
-	assert.Equal(t, 6.642287351, r.treeBag[0].Value)
-	assert.Equal(t, 0.0, r.treeBag[0].Left.Value)
-	assert.Equal(t, 1.0, r.treeBag[0].Right.Value)
+	assert.Equal(t, 6.642287351, r.estimators[0].Value)
+	assert.Equal(t, 0.0, r.estimators[0].Left.Value)
+	assert.Equal(t, 1.0, r.estimators[0].Right.Value)
+	assert.Equal(t, 0, r.estimators[0].Feature)
+	assert.Contains(t, r.feMapping[r.estimators[0]], 0, 1)
 	// Tree 1
-	assert.Equal(t, 6.642287351, r.treeBag[1].Value)
-	assert.Equal(t, 0.0, r.treeBag[1].Left.Value)
-	assert.Equal(t, 1.0, r.treeBag[1].Right.Value)
+	assert.Equal(t, 6.642287351, r.estimators[1].Value)
+	assert.Equal(t, 0.0, r.estimators[1].Left.Value)
+	assert.Equal(t, 1.0, r.estimators[1].Right.Value)
+	assert.Equal(t, 0, r.estimators[1].Feature)
+	assert.Contains(t, r.feMapping[r.estimators[1]], 0, 1)
 	// Tree 2
-	assert.Equal(t, 6.642287351, r.treeBag[2].Value)
-	assert.Equal(t, 0.0, r.treeBag[2].Left.Value)
-	assert.Equal(t, 1.0, r.treeBag[2].Right.Value)
+	assert.Equal(t, 6.642287351, r.estimators[2].Value)
+	assert.Equal(t, 0.0, r.estimators[2].Left.Value)
+	assert.Equal(t, 1.0, r.estimators[2].Right.Value)
+	assert.Equal(t, 0, r.estimators[2].Feature)
+	assert.Contains(t, r.feMapping[r.estimators[2]], 0, 1)
 	// Tree 3
-	assert.Equal(t, 6.642287351, r.treeBag[3].Value)
-	assert.Equal(t, 0.0, r.treeBag[3].Left.Value)
-	assert.Equal(t, 1.0, r.treeBag[3].Right.Value)
+	assert.Equal(t, 6.642287351, r.estimators[3].Value)
+	assert.Equal(t, 0.0, r.estimators[3].Left.Value)
+	assert.Equal(t, 1.0, r.estimators[3].Right.Value)
+	assert.Equal(t, 0, r.estimators[3].Feature)
+	assert.Contains(t, r.feMapping[r.estimators[3]], 0, 1)
 	// Tree 4
-	assert.Equal(t, 6.642287351, r.treeBag[4].Value)
-	assert.Equal(t, 0.0, r.treeBag[4].Left.Value)
-	assert.Equal(t, 1.0, r.treeBag[4].Right.Value)
+	assert.Equal(t, 6.642287351, r.estimators[4].Value)
+	assert.Equal(t, 0.0, r.estimators[4].Left.Value)
+	assert.Equal(t, 1.0, r.estimators[4].Right.Value)
+	assert.Equal(t, 0, r.estimators[4].Feature)
+	assert.Contains(t, r.feMapping[r.estimators[4]], 0, 1)
+}
+
+func TestPredict(t *testing.T) {
+	// Given
+	SIGNAL_NULL := .0
+	rows := mat.NewDense(2, 4, []float64{
+		SIGNAL_NULL, SIGNAL_NULL, 3.319983761, 6.642287351,
+		SIGNAL_NULL, SIGNAL_NULL, 2.209014212, 2.999208922,
+	})
+	dtree1 := &decision.Tree{
+		Value:   6.642287351,
+		Feature: 0,
+		Left:    &decision.Tree{Value: 0.0},
+		Right:   &decision.Tree{Value: 1.0},
+	}
+	dtree2 := &decision.Tree{
+		Value:   0,
+		Feature: 1,
+		Left:    &decision.Tree{Value: 1.0},
+		Right:   &decision.Tree{Value: 0.0},
+	}
+	rf := &RandomForest{
+		feMapping: make(map[*decision.Tree][]int, 2),
+		estimators:      []*decision.Tree{dtree1, dtree2},
+	}
+	rf.feMapping[dtree2] = []int{2, 3}
+	rf.feMapping[dtree1] = []int{3, 2}
+
+	// When
+	preds := rf.Predict(rows)
+
+	// Then
+	assert.Equal(t, 1.0, preds[0])
+	assert.Equal(t, 0.0, preds[1])
+}
+
+func TestPredictRow(t *testing.T) {
+	// Given
+	SIGNAL_NULL := .0
+	row := mathelper.Row{SIGNAL_NULL, SIGNAL_NULL, 3.319983761, 6.642287351}
+	row2 := mathelper.Row{SIGNAL_NULL, SIGNAL_NULL, 2.209014212, 2.999208922}
+	dtree1 := &decision.Tree{
+		Value:   6.642287351,
+		Feature: 0,
+		Left:    &decision.Tree{Value: 0.0},
+		Right:   &decision.Tree{Value: 1.0},
+	}
+	dtree2 := &decision.Tree{
+		Value:   0,
+		Feature: 1,
+		Left:    &decision.Tree{Value: 1.0},
+		Right:   &decision.Tree{Value: 0.0},
+	}
+	rf := &RandomForest{
+		feMapping: make(map[*decision.Tree][]int, 2),
+		estimators:      []*decision.Tree{dtree1, dtree2},
+	}
+	rf.feMapping[dtree2] = []int{2, 3}
+	rf.feMapping[dtree1] = []int{3, 2}
+
+	// When
+	p := rf.PredictRow(row)
+	p2 := rf.PredictRow(row2)
+
+	// Then
+	assert.Equal(t, 1.0, p)
+	assert.Equal(t, 0.0, p2)
 }
 
 func TestRandomSubColumns(t *testing.T) {
@@ -98,10 +176,11 @@ func TestRandomSubColumns(t *testing.T) {
 	seed := int64(123)
 
 	// When
-	r := randomSubColumns(columns, 4, seed)
+	r := randomSubColumns(columns, 0.5, seed)
 
 	// Then
-	assert.Len(t, r, 4)
+	fmt.Println(r)
+	assert.Len(t, r, 3)
 	assert.NotContains(t, r, 4, 5)
 	assert.Contains(t, r, 0, 1, 2, 3)
 }
@@ -109,8 +188,8 @@ func TestRandomSubColumns(t *testing.T) {
 func TestIsFitted(t *testing.T) {
 	// Given
 	var model Model = &RandomForest{
-		Score:   0.9,
-		treeBag: []*decision.Tree{&decision.Tree{}},
+		Score:      0.9,
+		estimators: []*decision.Tree{&decision.Tree{}},
 	}
 
 	// When

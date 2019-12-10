@@ -4,21 +4,23 @@ import (
 	"math"
 	"math/rand"
 	"rf/ensemble/decision"
+	"rf/mathelper"
 	"sort"
 
 	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 )
 
 /*
 RandoForest is a bagging algorithm based on decision Trees
 */
 type RandomForest struct {
-	treeBag []*decision.Tree
-	Score   float64
-	// FeatureMap store the mapping between subtrees that learn only on a subset of the feature and
+	estimators []*decision.Tree
+	Score      float64
+	// feMapping store the mapping between subtrees that learn only on a subset of the feature and
 	// the general Matrix passed to the Fit function.
-	// The featureMap[treePointer][subMatrixFeatureId] = generalMatrixIdFeature
-	featureMap map[*decision.Tree]map[int]int
+	// The feMapping[treePointer][subMatrixFeatureId] = generalMatrixIdFeature
+	feMapping map[*decision.Tree][]int
 }
 
 /*
@@ -27,7 +29,7 @@ Fit builds decision trees on subsamples of the matrix X using the sqare root of 
 func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int, seed int64) *RandomForest {
 	feCols := extractFeatures(m, yCol)
 	rf := &RandomForest{
-		featureMap: make(map[*decision.Tree]map[int]int),
+		feMapping: make(map[*decision.Tree][]int),
 	}
 	ratioR := 1.0
 	ratioC := 1 - sqrtRatio(len(feCols))
@@ -36,22 +38,40 @@ func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int, seed int64)
 		subCols := randomSubColumns(feCols, ratioC, seed)
 		subM := subsample(m, ratioR, append(subCols, yCol), seed)
 		t := decision.Fit(subM, -1, maxDepth, minSize)
-		rf.treeBag = append(rf.treeBag, t)
+		rf.estimators = append(rf.estimators, t)
+		rf.feMapping[t] = subCols
 	}
 	return rf
 }
 
+// Predict returns an array of predictions for each row in the Matrix
 func (rf *RandomForest) Predict(m *mat.Dense) (predictions []float64) {
-	return nil
+	dR, _ := m.Dims()
+	predictions = make([]float64, dR)
+	for i := 0; i < dR; i++ {
+		predictions[i] = rf.PredictRow(m.RowView(i))
+	}
+	return predictions
 }
 
+// PredictRow returns the most frequent predictions accross all estimators predictions
 func (rf *RandomForest) PredictRow(row mat.Vector) float64 {
-	return 0
+	var predictions mathelper.Row = make([]float64, len(rf.estimators))
+	for i, estimator := range rf.estimators {
+		features := rf.feMapping[estimator]
+		projectedRow := make([]float64, len(features))
+		for i, f := range features {
+			projectedRow[i] = row.AtVec(f)
+		}
+		predictions[i] = estimator.PredictRow(mathelper.Row(projectedRow))
+	}
+	mode, _ := stat.Mode(predictions, nil)
+	return mode
 }
 
 // IsFitted returns False if NFeatures is <= 0 or Score < 0 or treeBag length is < 0
 func (rf *RandomForest) IsFitted() bool {
-	if len(rf.treeBag) >= 0 && rf.Score >= 0 {
+	if len(rf.estimators) >= 0 && rf.Score >= 0 {
 		return true
 	}
 	return false
@@ -59,8 +79,8 @@ func (rf *RandomForest) IsFitted() bool {
 
 func extractFeatures(m mat.Matrix, yCol int) []int {
 	feCols := []int{}
-	_, nC := m.Dims()
-	for c := 0; c < nC; c++ {
+	_, dC := m.Dims()
+	for c := 0; c < dC; c++ {
 		if c != yCol {
 			feCols = append(feCols, c)
 		}

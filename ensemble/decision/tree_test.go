@@ -134,23 +134,6 @@ func BenchmarkBestSplit(b *testing.B) {
 	fmt.Println(feature, threshold, score, left, right)
 }
 
-func TestMostCurrentValue(t *testing.T) {
-	// Given
-	predictions := mat.NewVecDense(5, []float64{0.3, 0.4, 0.9, 0.5, 0.3})
-	predictions2 := mat.NewVecDense(5, []float64{0.4, 0.4, 0.9, 0.9, 0.9})
-	predictions3 := mat.NewVecDense(3, []float64{0.1, 0.4, 0.8})
-
-	// When
-	r := mostCurrentValue(predictions)
-	r2 := mostCurrentValue(predictions2)
-	r3 := mostCurrentValue(predictions3)
-
-	// Then
-	assert.Equal(t, 0.3, r)
-	assert.Equal(t, 0.9, r2)
-	assert.Equal(t, 0.1, r3)
-}
-
 func TestTerm(t *testing.T) {
 	// Given
 	data := mat.NewDense(9, 1, []float64{0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0})
