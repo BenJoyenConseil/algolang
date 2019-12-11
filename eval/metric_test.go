@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -15,13 +16,7 @@ func TestAccuracy(t *testing.T) {
 	r3 := Accuracy(actual, predicted[4:])
 
 	// Then
-	if r != 50 {
-		t.Error("Should be Accuracy 50 !=", r)
-	}
-	if r2 != 100 {
-		t.Error("Should be Accuracy 100 !=", r2)
-	}
-	if r3 != 0 {
-		t.Error("Should be Accuracy 0 !=", r3)
-	}
+	assert.Equal(t, 50., r)
+	assert.Equal(t, 100., r2)
+	assert.Equal(t, 0., r3)
 }
