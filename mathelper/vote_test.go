@@ -14,9 +14,9 @@ func TestMostCurrentValue(t *testing.T) {
 	predictions3 := Row{0.1, 0.4, 0.8}
 
 	// When
-	r := MostCurrentValue(predictions)
-	r2 := MostCurrentValue(predictions2)
-	r3 := MostCurrentValue(predictions3)
+	r := Mode(predictions)
+	r2 := Mode(predictions2)
+	r3 := Mode(predictions3)
 
 	// Then
 	assert.Equal(t, 0.3, r)
