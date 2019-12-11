@@ -7,7 +7,7 @@ Decision Tree, Random Forest implementations
 "This section applies the CART algorithm to the Bank Note dataset."
 
 	types := map[string]string{"y": "float"}
-		df := io.LoadCsv("./data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
+	df := io.LoadCsv("./data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
 	m := io.ToMatrix(df)
 
 	scores := eval.CrossVal(m, 4, 5, decision.Fit, map[string]int{"maxDepth": 5, "minSize": 10})
