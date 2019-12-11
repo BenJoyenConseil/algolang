@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"rf/decision"
+	"rf/algo"
+	"rf/algo/decision"
 	"rf/mathelper"
 	"sort"
 
@@ -16,25 +17,27 @@ import (
 RandoForest is a bagging algorithm based on decision Trees
 */
 type RandomForest struct {
-	estimators []*decision.Tree
+	estimators []algo.Model
 	Score      float64
-	// feMapping store the mapping between subtrees that learn only on a subset of the feature and
-	// the general Matrix passed to the Fit function.
-	// The feMapping[treePointer][subMatrixFeatureId] = generalMatrixIdFeature
-	feMapping map[*decision.Tree][]int
+	// feMapping stores the mapping between subtrees that learn only on a subset of all the features the Matrix has.
+	feMapping map[algo.Model][]int
 }
 
 /*
-Fit builds decision trees on subsamples of the matrix X using the sqare root of nFeatures
+fit builds decision trees on subsamples of the matrix X using the sqare root of nFeatures
 */
-func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int) *RandomForest {
+func Fit(m *mat.Dense, yCol int, params map[string]int) algo.Model {
+	return fit(m, yCol, params["n_estimator"], params["maxDepth"], params["minSize"])
+}
+
+func fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int) *RandomForest {
 	if yCol == -1 {
 		_, dC := m.Dims()
 		yCol = dC - 1
 	}
 	feCols := extractFeatures(m, yCol)
 	rf := &RandomForest{
-		feMapping: make(map[*decision.Tree][]int),
+		feMapping: make(map[algo.Model][]int),
 	}
 	ratioR := 1.0
 	ratioC := 1 - sqrtRatio(len(feCols))
@@ -42,7 +45,7 @@ func Fit(m *mat.Dense, yCol int, nEstimators, maxDepth, minSize int) *RandomFore
 	for estimator := 0; estimator < nEstimators; estimator++ {
 		subCols := randomSubColumns(feCols, ratioC)
 		subM := subsample(m, ratioR, append(subCols, yCol))
-		t := decision.Fit(subM, -1, maxDepth, minSize)
+		t := decision.Fit(subM, -1, map[string]int{"maxDepth": maxDepth, "minSize": minSize})
 		rf.estimators = append(rf.estimators, t)
 		rf.feMapping[t] = subCols
 	}

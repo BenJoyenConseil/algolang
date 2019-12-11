@@ -3,14 +3,11 @@ package ensemble
 import (
 	"fmt"
 	"math/rand"
-	"rf/ensemble/decision"
-	"rf/eval"
-	"rf/io"
+	"rf/algo/decision"
 	"rf/mathelper"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tobgu/qframe/config/csv"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -71,7 +68,7 @@ func TestFit(t *testing.T) {
 	rand.Seed(1234)
 
 	// When
-	r := Fit(m, yCol, nEstimators, maxDepth, minSampleSplit)
+	r := fit(m, yCol, nEstimators, maxDepth, minSampleSplit)
 
 	// Then
 	assert.Len(t, r.estimators, 5)
