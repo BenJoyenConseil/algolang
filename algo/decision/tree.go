@@ -2,6 +2,7 @@ package decision
 
 import (
 	"fmt"
+	"rf/algo"
 	"rf/mathelper"
 
 	"gonum.org/v1/gonum/mat"
@@ -15,6 +16,11 @@ type Tree struct {
 	Feature int
 	Value   float64
 	Right   *Tree
+}
+
+func (Tree Tree) IsFitted() bool {
+	panic("not implemented !")
+	return false
 }
 
 /*
@@ -48,19 +54,22 @@ func (tree Tree) PredictRow(row mat.Vector) float64 {
 
 /*
 Fit builds and return a Tree fitted on data, and ready to predict new rows of []float64
+Parameters allowed are maxDepth and minSize
 */
-func Fit(m *mat.Dense, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
-
+func Fit(m *mat.Dense, yCol int, params map[string]int) algo.Model {
+	return fit(m, yCol, params["maxDepth"], params["minSize"])
+}
+func fit(m *mat.Dense, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
 	col, threshold, score, l, r := bestSplit(m, yCol)
 	tree = &Tree{
 		Feature: col,
 		Value:   threshold,
 	}
-
 	var d int = 1
 	if len(depth) > 0 {
 		d = depth[0]
 	}
+
 	if l == nil && r == nil {
 		v := term(m, yCol)
 		tree.Value = v
@@ -82,14 +91,14 @@ func Fit(m *mat.Dense, yCol, maxDepth, minSize int, depth ...int) (tree *Tree) {
 	}
 	lr, _ := l.Dims()
 	if lr > minSize && score > 0 {
-		tree.Left = Fit(l, yCol, maxDepth, minSize, d+1)
+		tree.Left = fit(l, yCol, maxDepth, minSize, d+1)
 	} else {
 		tree.Left = &Tree{Value: term(l, yCol)}
 	}
 
 	rr, _ := l.Dims()
 	if rr > minSize && score > 0 {
-		tree.Right = Fit(r, yCol, maxDepth, minSize, d+1)
+		tree.Right = fit(r, yCol, maxDepth, minSize, d+1)
 	} else {
 		tree.Right = &Tree{Value: term(r, yCol)}
 	}

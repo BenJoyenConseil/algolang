@@ -84,7 +84,7 @@ func TestBestSplit_Ycol(t *testing.T) {
 	assert.Equal(t, 0.0, left.At(4, 1))
 	assert.Equal(t, 1.0, right.At(4, 1))
 }
-func TestBestFit_MatrixSameRows(t *testing.T) {
+func TestFit_MatrixSameRows(t *testing.T) {
 	// Given
 	m := mat.NewDense(3, 3, []float64{
 		0.21431, 0.87711, 1.0,
@@ -93,7 +93,7 @@ func TestBestFit_MatrixSameRows(t *testing.T) {
 	})
 
 	// When
-	tree := Fit(m, -1, 1, 1)
+	tree := fit(m, -1, 1, 1)
 
 	// Then
 	assert.Equal(t, 1.0, tree.Value)
@@ -197,7 +197,7 @@ func TestFit(t *testing.T) {
 	})
 
 	// When
-	r := Fit(m, -1, 10, 1)
+	r := fit(m, -1, 10, 1)
 
 	// Then
 	assert.Equal(t, 0.0, r.Left.Value)
