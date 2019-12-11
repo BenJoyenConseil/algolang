@@ -1,4 +1,4 @@
-package ensemble
+package rf
 
 import "gonum.org/v1/gonum/mat"
 

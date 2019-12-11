@@ -1,9 +1,10 @@
 package ensemble
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
-	"rf/ensemble/decision"
+	"rf/decision"
 	"rf/mathelper"
 	"sort"
 
@@ -79,6 +80,16 @@ func (rf *RandomForest) IsFitted() bool {
 		return true
 	}
 	return false
+}
+
+func (rf RandomForest) String() string {
+	s := ""
+	for i, e := range rf.estimators {
+		s += fmt.Sprintln("Estimator #", i)
+		s += fmt.Sprintln("Feature mapping : ", rf.feMapping[e])
+		s += fmt.Sprintln(e)
+	}
+	return s
 }
 
 func extractFeatures(m mat.Matrix, yCol int) []int {

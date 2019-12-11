@@ -2,12 +2,9 @@ package decision
 
 import (
 	"fmt"
-	"rf/eval"
-	"rf/io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tobgu/qframe/config/csv"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -87,19 +84,22 @@ func TestBestSplit_Ycol(t *testing.T) {
 	assert.Equal(t, 0.0, left.At(4, 1))
 	assert.Equal(t, 1.0, right.At(4, 1))
 }
-func TestBestSplit_NilNil(t *testing.T) {
+func TestBestFit_MatrixSameRows(t *testing.T) {
 	// Given
-	m := mat.NewDense(2, 3, []float64{
+	m := mat.NewDense(3, 3, []float64{
+		0.21431, 0.87711, 1.0,
 		0.21431, 0.87711, 1.0,
 		0.21431, 0.87711, 1.0,
 	})
 
 	// When
-	_, _, _, left, right := bestSplit(m, 1)
+	tree := Fit(m, -1, 1, 1)
 
 	// Then
-	assert.NotNil(t, left)
-	assert.NotNil(t, right)
+	assert.Equal(t, 1.0, tree.Value)
+	assert.Equal(t, 0, tree.Feature)
+	assert.Nil(t, tree.Right)
+	assert.Nil(t, tree.Left)
 }
 
 func TestGiniIndex(t *testing.T) {
@@ -224,30 +224,4 @@ func TestPredict(t *testing.T) {
 
 	// Then
 	assert.Exactly(t, []float64{0.0, 1.0}, r)
-}
-
-func TestFunctional(t *testing.T) {
-
-	types := map[string]string{"y": "float"}
-	df := io.LoadCsv("../../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
-	m := io.ToMatrix(df)
-
-	model := Fit(m, -1, 5, 10)
-	preds := model.Predict(m)
-	y, _ := df.FloatView("y")
-	a := eval.Accuracy(y.Slice(), preds)
-	printTree(model)
-	fmt.Println(a)
-
-	assert.Greater(t, a, 97.0)
-}
-
-func BenchmarkFit(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-
-		types := map[string]string{"y": "float"}
-		df := io.LoadCsv("../../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
-		m := io.ToMatrix(df)
-		_ = Fit(m, -1, 5, 10)
-	}
 }

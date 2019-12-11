@@ -268,33 +268,3 @@ func TestRand(t *testing.T) {
 
 	t.Fail()
 }
-
-func TestFunctional(t *testing.T) {
-
-	types := map[string]string{"y": "float"}
-	df := io.LoadCsv("../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
-	m := io.ToMatrix(df)
-
-	model := Fit(m, -1, 5, 5, 10)
-	preds := model.Predict(m)
-	y, _ := df.FloatView("y")
-	a := eval.Accuracy(y.Slice(), preds)
-
-	for _, e := range model.estimators {
-		fmt.Println(e)
-	}
-	fmt.Println("Accuracy", a)
-
-	assert.Greater(t, a, 90.0)
-	t.Fail()
-}
-
-func BenchmarkFit(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-
-		types := map[string]string{"y": "float"}
-		df := io.LoadCsv("../../data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
-		m := io.ToMatrix(df)
-		_ = Fit(m, -1, 5, 5, 10)
-	}
-}
