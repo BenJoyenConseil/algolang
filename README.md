@@ -41,5 +41,5 @@ RandoForest [90.14598540145985 89.78102189781022 96.71532846715328 92.3357664233
 
 * [algo /](./algo)
     * `model.go` : defines the `Model` interface which has `Predict` contract.
-    * [decision /](./decision) : DecisionTree is exposed by this package, using CART and the gini function.
-    * [ensemble /](./ensemble) : RandomForest algorithm is exposed by this package. It uses Boostraping and Bagging of DecisionTrees.
+    * [decision /](./algo/decision) : DecisionTree is exposed by this package, using CART and the gini function.
+    * [ensemble /](./algo/ensemble) : RandomForest algorithm is exposed by this package. It uses Boostraping and Bagging of DecisionTrees.
