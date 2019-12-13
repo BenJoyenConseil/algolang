@@ -9,7 +9,7 @@ Decision Tree, Random Forest implementations
 ### Load CSV file into master Matrix
 ```go
 types := map[string]string{"y": "float"}
-df := io.LoadCsv("./data/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
+df := io.LoadCsv("./testdata/data_banknote_authentication.txt", csv.Headers([]string{"col_0", "col_1", "col_2", "col_3", "y"}), csv.Types(types))
 m := io.ToMatrix(df)
 ```
 ### The cross validation with the  accuracy score on DecisionTree
